@@ -9,7 +9,6 @@ public class Main {
     private final static String USER_ID = "456234332";
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Hello World!");
 
         MossClient client = new MossClient(USER_ID);
 
