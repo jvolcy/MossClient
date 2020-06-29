@@ -222,31 +222,21 @@ public class MossClient {
      * open the socket connection to the moss server
      * Do not call this function directly.  It is called by the send() function.
      * ===================================================================== */
-    private void openSocket() {
-        try {
-            System.out.println(String.format("openSocket().  server=%s, port = %d", server, port));
-            socket = new Socket(server, port);
-            socketOutStream = new DataOutputStream(socket.getOutputStream());
-            socketInStream = new DataInputStream(socket.getInputStream());
-        }
-
-        catch (Exception e){
-            System.out.println("Caught exception: MossClient.openSocket(): " + e.toString());
-        }
+    private void openSocket() throws Exception {
+        System.out.println(String.format("openSocket().  server=%s, port = %d", server, port));
+        socket = new Socket(server, port);
+        socketOutStream = new DataOutputStream(socket.getOutputStream());
+        socketInStream = new DataInputStream(socket.getInputStream());
     }
 
     /* ======================================================================
      * close the socket connection to the moss server
      * Do not call this function directly.  It is called by the send() function.
      * ===================================================================== */
-    private void closeSocket() {
-        try {
-            socketOutStream.close();
-            socketInStream.close();
-            socket.close();
-        } catch (Exception e) {
-            System.out.println("Caught exception: MossClient.closeSocket(): " + e.toString());
-        }
+    private void closeSocket() throws Exception {
+        socketOutStream.close();
+        socketInStream.close();
+        socket.close();
     }
 
     /* ======================================================================
@@ -257,25 +247,17 @@ public class MossClient {
      * Do not call this function directly.  It is called by the send() and
      * uploadFile() functions.
      * ===================================================================== */
-    private void socketWrite(String data) {
-        //System.out.println("socketWrite(): >>"+data+"<<");
+    private void socketWrite(String data) throws Exception {
+        byte []bdata = data.getBytes(StandardCharsets.UTF_8);
+        //for (byte x : bdata) {System.out.print(x);System.out.print(" ");}
+        //System.out.println();
+        //System.out.println(bdata.length);
 
-        try {
-            byte []bdata = data.getBytes(StandardCharsets.UTF_8);
-            //for (byte x : bdata) {System.out.print(x);System.out.print(" ");}
-            //System.out.println();
-            //System.out.println(bdata.length);
+        //socketOutStream.writeUTF(data);
+        socketOutStream.write(bdata, 0, bdata.length);
 
-            //socketOutStream.writeUTF(data);
-            socketOutStream.write(bdata, 0, bdata.length);
-
-            socketOutStream.flush();
+        socketOutStream.flush();
         }
-        catch (Exception e){
-            System.out.println("Caught exception: MossClient.socketWrite(): " + e.toString());
-        }
-    }
-
 
     /* ======================================================================
      * socketRead()
@@ -284,18 +266,9 @@ public class MossClient {
      * using this function.
      * Do not call this function directly.  It is called by the send() function.
      * ===================================================================== */
-    private String socketRead(){
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(socketInStream));
-            return (reader.readLine());
-        }
-/*      try {
-            return socketInStream.readUTF();
-        }*/
-            catch (Exception e){
-            System.out.println("Caught exception: MossClient.socketRead(): " + e.toString());
-            return "";
-        }
+    private String socketRead() throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(socketInStream));
+        return (reader.readLine());
     }
 
 
@@ -304,7 +277,7 @@ public class MossClient {
      * the moss server.
      * Do not call this function directly.  It is called by the send() function.
      * ===================================================================== */
-    private void uploadFile(String file_path, String display_name, int file_id) {
+    private void uploadFile(String file_path, String display_name, int file_id) throws Exception {
         /*Note: socket must be open before calling this function. */
         if (display_name.equals("")) {
             //If no display name added by user,default to file path
@@ -313,14 +286,8 @@ public class MossClient {
         }
 
         String content;
-        try {
-            Path fileName = Path.of(file_path);
-            content = Files.readString(fileName);
-        }
-        catch (Exception e) {
-            System.out.println("Caught exception: MossClient.uploadFile(): " + e.toString());
-            content = "";
-        }
+        Path fileName = Path.of(file_path);
+        content = Files.readString(fileName);
 
         long size = content.length();
 
@@ -346,7 +313,7 @@ public class MossClient {
      * (-l, -m, -x, etc...) and all base files and student program files
      * have been specified (addBaseFile() and addFile(), respectively.)
      * ===================================================================== */
-    String send(){
+    String send() throws Exception {
         String recv;
         System.out.println("Opening socket...");
         openSocket();
@@ -406,32 +373,21 @@ public class MossClient {
      * after a successful call to send() to download the comparison report
      * summary page.
      * ===================================================================== */
-    public String getWebPage(String url) {
+    public String getWebPage(String url) throws Exception {
 
         String response = "";
-        try {
-            URL oracle = new URL(url);
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(oracle.openStream()));
+        URL oracle = new URL(url);
+        BufferedReader in = new BufferedReader(
+                new InputStreamReader(oracle.openStream()));
 
-            final int BUF_SIZE = 4096;
-            char[] buffer = new char[BUF_SIZE];
+        final int BUF_SIZE = 4096;
+        char[] buffer = new char[BUF_SIZE];
 
-            while ( in.read(buffer, 0, BUF_SIZE)  != -1) {
-                response = response +  (new String(buffer)).trim(); //new String(buffer);
-            }
-
-            /*
-            String data;
-            while ((data = in.readLine() ) != null)
-                response = response + data + '\n';
-            */
-            in.close();
-        }
-        catch (Exception e){
-            System.out.println("Caught exception: MossClient.send(): " + e.toString());
+        while ( in.read(buffer, 0, BUF_SIZE)  != -1) {
+            response = response +  (new String(buffer)).trim(); //new String(buffer);
         }
 
+        in.close();
         return(response);
     }
 
